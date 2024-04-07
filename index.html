@@ -92,18 +92,17 @@
         this.message = document.getElementById('message');
       }
 
-      cellClicked(index) {
+      cellClicked(index,currentPlayer) {
+       
         if (this.gameActive && this.gameState[index] === '-') {
-          this.gameState[index] = this.currentPlayer;
+          this.gameState[index] = currentPlayer;
           this.renderBoard();
           if (this.checkWin()) {
             this.gameActive = false;
-            alert(this.currentPlayer + ' wins!');
+            alert(currentPlayer + ' wins!');
           } else if (this.checkDraw()) {
             this.gameActive = false;
             alert('It\'s a draw!');
-          } else {
-            this.currentPlayer = this.currentPlayer === 'X' ? 'O' : 'X';
           }
         }
       }
@@ -135,7 +134,6 @@
       renderBoard() {
         this.cells.forEach((cell, index) => {
           cell.textContent = this.gameState[index];
-          cell.addEventListener('click', () => this.cellClicked(index));
         });
       }
 
@@ -144,6 +142,15 @@
         this.gameActive = true;
         this.currentPlayer = 'X';
         this.renderBoard();
+        this.cells.forEach(cell => {
+          this.cells.forEach(cell => {
+        cell.addEventListener('click', () => {
+          const cellIndex = parseInt(cell.dataset.index);
+        
+          this.cellClicked(cellIndex, 'X');
+        });
+  });
+        });
       }
 
       showHelp() {
@@ -152,85 +159,74 @@
 
       trainAgent() {
         console.log("At train Agent")
-        const newAgent = new TicTacToeAgent();
-        const episodes = parseInt(this.trainingEpisodes);
+        const newAgent = new TicTacToeAgent(4);
+        const episodes = parseInt(10000);
         const rate = parseFloat(this.learningRate);
 
         // Train the new agent with the specified number of episodes and learning rate
-        newAgent.train(episodes, rate);
+        newAgent.train(episodes);
 
         // Update the message or perform any other necessary actions
         this.message.textContent = `Training AI with ${episodes} episodes and learning rate ${rate}...`;
       }
 
-    playAgainstAgent() {
-      const savedAgentData = localStorage.getItem('agentData');
-      if (!savedAgentData) {
-          alert("No saved agent data found. Train the AI first.");
+      playAgainstAgent() {
+        const savedAgentData = localStorage.getItem('bestAgentData');
+        if (!savedAgentData) {
+          alert('No saved agent data found. Train the AI first.');
           return;
-      }
+        }
 
-      const loadedAgentData = JSON.parse(savedAgentData);
-      const loadedAgent = new TicTacToeAgent(
+        const loadedAgentData = JSON.parse(savedAgentData);
+        const loadedAgent = new TicTacToeAgent(
           loadedAgentData.boardSize,
           loadedAgentData.learningRate,
           loadedAgentData.gamma,
           loadedAgentData.epsilonDecay
-      );
+        );
 
-      let gameState = Array(this.boardSize * this.boardSize).fill('-');
-      let gameActive = true;
+        this.startGame()
+        let gameActive = true;
+        let xCount = 0;
+        let oCount = 0;
 
-      while (gameActive) {
-          const actionX = this.getHumanMove(gameState);
-          gameState[actionX] = 'X';
-          if (this.checkWin(gameState, 'X')) {
-              console.log("X won");
-              console.log(gameState);
-              gameActive = false;
-              break;
-          } else if (this.checkDraw(gameState)) {
-              console.log("It's a draw!");
-              gameActive = false;
-              break;
+        // Agent makes the first move
+        const actionO =  loadedAgent.makeMove(this.gameState);
+        this.cellClicked(actionO,'O')
+        
+        this.gameState.forEach(symbol => {
+          if (symbol === 'X') {
+            xCount++;
+          } else if (symbol === 'O') {
+            oCount++;
           }
-
-          const actionO = loadedAgent.makeMove(gameState);
-          gameState[actionO] = 'O';
-          if (this.checkWin(gameState, 'O')) {
-              console.log("O won");
-              break;
-          } else if (this.checkDraw(gameState)) {
-              console.log("It's a draw!");
-              break;
-          }
-      }
-    };
-    getHumanMove(gameState) {
-    let index = -1;
-
-    this.cells.forEach((cell, i) => {
-        cell.addEventListener('click', () => {
-            if (gameState[i] === '-' && index === -1) {
-                index = i;
-                this.cellClicked(index);
-            }
         });
-    });
 
-    return new Promise(resolve => {
-        const interval = setInterval(() => {
-            if (index !== -1) {
-                clearInterval(interval);
-                resolve(index);
+        // If 'X' and 'O' counts are equal, AI makes another move
+        console.log(this.gameState)
+        if (xCount === oCount) {
+          const actionOAgain = loadedAgent.makeMove(this.gameState);
+          this.cellClicked(actionOAgain, 'O');
+        }
+        return
+
+          while (gameActive) {
+            const actionO = loadedAgent.makeMove(this.gameState);
+            console.log("Hejrh")
+            this.cellClicked(actionO,'O')
+            if (this.checkWin(this.gameState, 'O')) {
+              console.log('O won');
+              break;
+            } else if (this.checkDraw(this.gameState)) {
+              console.log("It's a draw!");
+              break;
             }
-        }, 100);
-    });
-}
+          
     }
+  }
+}
 
     const ticTacToe = new TicTacToe();
-    // ticTacToe.startGame()
   </script>
    <style>
     body {
