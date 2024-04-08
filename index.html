@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.11.0"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 </head>
+
 <body>
   <nav>
     <ul>
@@ -24,10 +26,10 @@
         <button onclick="showHelp()">Help</button>
       </div>
     </div>
-    <div class="hero-image"><img src="./assets/tic-tac-toe.jpg"/></div>
+    <div class="hero-image"><img src="./assets/tic-tac-toe.jpg" /></div>
 
   </div>
-  <div class="game"> 
+  <div class="game">
     <div class="game-controls">
       <div class="control-item tooltip">
         <label for="training-episodes">Training Episodes <i class="fas fa-question-circle"></i></label>
@@ -36,362 +38,331 @@
       </div>
       <div class="control-item tooltip">
         <label for="learning-rate">Learning Rate <i class="fas fa-question-circle"></i></label>
-        <input class="control-input" type="number" id="learning-rate" name="learning-rate" step="0.01" min="0.01" max="1" value="0.1">
+        <input class="control-input" type="number" id="learning-rate" name="learning-rate" step="0.01" min="0.01"
+          max="1" value="0.1">
         <span class="tooltiptext">Adjusts the speed of learning for the AI</span>
       </div>
       <div>
         <button onclick="ticTacToe.trainAgent()">Train AI</button>
         <button onclick="ticTacToe.playAgainstAgent()">Play Against Agent</button>
       </div>
-      
+
     </div>
     <div class="board">
       <div class="board-row">
         <div class="cell" data-index="0"></div>
         <div class="cell" data-index="1"></div>
         <div class="cell" data-index="2"></div>
-        <div class="cell" data-index="3"></div>
       </div>
       <div class="board-row">
+        <div class="cell" data-index="3"></div>
         <div class="cell" data-index="4"></div>
         <div class="cell" data-index="5"></div>
+      </div>
+      <div class="board-row">
         <div class="cell" data-index="6"></div>
         <div class="cell" data-index="7"></div>
-      </div>
-      <div class="board-row">
         <div class="cell" data-index="8"></div>
-        <div class="cell" data-index="9"></div>
-        <div class="cell" data-index="10"></div>
-        <div class="cell" data-index="11"></div>
       </div>
-      <div class="board-row">
-        <div class="cell" data-index="12"></div>
-        <div class="cell" data-index="13"></div>
-        <div class="cell" data-index="14"></div>
-        <div class="cell" data-index="15"></div>
-      </div>
-      <div class="clear"></div>
-  
-    <p id="message"></p>
-  </div>
+      <p id="message"></p>
+    </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
-  <script src="agent.js"></script>
-  <script>
-    class TicTacToe {
-      constructor() {
-        this.boardSize = 4;
-        this.board = Array(this.boardSize * this.boardSize).fill('-');
-        this.gameActive = true;
-        this.cells = document.querySelectorAll('.cell');
-        this.gameState = Array(16).fill('-');
-        this.currentPlayer = 'X';
-        // this.trainingEpisodes = document.getElementById('training-episodes');
-        this.trainingEpisodes = 20;
-        this.learningRate = document.getElementById('learning-rate');
-        this.message = document.getElementById('message');
-      }
-
-      cellClicked(index,currentPlayer) {
-       
-        if (this.gameActive && this.gameState[index] === '-') {
-          this.gameState[index] = currentPlayer;
-          this.renderBoard();
-          if (this.checkWin()) {
-            this.gameActive = false;
-            alert(currentPlayer + ' wins!');
-          } else if (this.checkDraw()) {
-            this.gameActive = false;
-            alert('It\'s a draw!');
-          }
-        }
-      }
-
-      checkWin() {
-        const winningCombinations = [
-          [0, 1, 2], [1, 2, 3], // Top row
-          [4, 5, 6], [5, 6, 7], // Middle row
-          [8, 9, 10], [9, 10, 11], // Bottom row
-          [12, 13, 14], [13, 14, 15], // Last row
-          [0, 4, 8], [4, 8, 12], // Left column
-          [1, 5, 9], [5, 9, 13], // 2nd column
-          [2, 6, 10], [6, 10, 14], // 3rd column
-          [3, 7, 11], [7, 11, 15], // Right column
-          [0, 5, 10], [5, 10, 15], // Diagonal from top-left to bottom-right
-          [3, 6, 9], [6, 9, 12] // Diagonal from top-right to bottom-left
-        ];
-
-        return winningCombinations.some(combination => {
-          const [a, b, c] = combination;
-          return this.gameState[a] !== '-' && this.gameState[a] === this.gameState[b] && this.gameState[a] === this.gameState[c];
-        });
-      }
-
-      checkDraw() {
-        return this.gameState.every(symbol => symbol !== '-');
-      }
-
-      renderBoard() {
-        this.cells.forEach((cell, index) => {
-          cell.textContent = this.gameState[index];
-        });
-      }
-
-      startGame() {
-        this.gameState = Array(16).fill('-');
-        this.gameActive = true;
-        this.currentPlayer = 'X';
-        this.renderBoard();
-        this.cells.forEach(cell => {
-          this.cells.forEach(cell => {
-        cell.addEventListener('click', () => {
-          const cellIndex = parseInt(cell.dataset.index);
-        
-          this.cellClicked(cellIndex, 'X');
-        });
-  });
-        });
-      }
-
-      showHelp() {
-        // Implement help functionality here
-      }
-
-      trainAgent() {
-        console.log("At train Agent")
-        const newAgent = new TicTacToeAgent(4);
-        const episodes = parseInt(10000);
-        const rate = parseFloat(this.learningRate);
-
-        // Train the new agent with the specified number of episodes and learning rate
-        newAgent.train(episodes);
-
-        // Update the message or perform any other necessary actions
-        this.message.textContent = `Training AI with ${episodes} episodes and learning rate ${rate}...`;
-      }
-
-      playAgainstAgent() {
-        const savedAgentData = localStorage.getItem('bestAgentData');
-        if (!savedAgentData) {
-          alert('No saved agent data found. Train the AI first.');
-          return;
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+    <script src="agent.js"></script>
+    <script>
+      class TicTacToe {
+        constructor() {
+          this.boardSize = 3;
+          this.board = Array(this.boardSize * this.boardSize).fill('-');
+          this.gameActive = true;
+          this.cells = document.querySelectorAll('.cell');
+          this.gameState = Array(9).fill('-');
+          this.currentPlayer = 'X';
+          this.trainingEpisodes = document.getElementById('training-episodes');
+          this.learningRate = document.getElementById('learning-rate');
+          this.message = document.getElementById('message');
         }
 
-        const loadedAgentData = JSON.parse(savedAgentData);
-        const loadedAgent = new TicTacToeAgent(
-          loadedAgentData.boardSize,
-          loadedAgentData.learningRate,
-          loadedAgentData.gamma,
-          loadedAgentData.epsilonDecay
-        );
+        cellClicked(index, currentPlayer) {
 
-        this.startGame()
-        let gameActive = true;
-        let xCount = 0;
-        let oCount = 0;
-
-        // Agent makes the first move
-        const actionO =  loadedAgent.makeMove(this.gameState);
-        this.cellClicked(actionO,'O')
-        
-        this.gameState.forEach(symbol => {
-          if (symbol === 'X') {
-            xCount++;
-          } else if (symbol === 'O') {
-            oCount++;
-          }
-        });
-
-        // If 'X' and 'O' counts are equal, AI makes another move
-        console.log(this.gameState)
-        if (xCount === oCount) {
-          const actionOAgain = loadedAgent.makeMove(this.gameState);
-          this.cellClicked(actionOAgain, 'O');
-        }
-        return
-
-          while (gameActive) {
-            const actionO = loadedAgent.makeMove(this.gameState);
-            console.log("Hejrh")
-            this.cellClicked(actionO,'O')
-            if (this.checkWin(this.gameState, 'O')) {
-              console.log('O won');
-              break;
-            } else if (this.checkDraw(this.gameState)) {
-              console.log("It's a draw!");
-              break;
+          if (this.gameActive && this.gameState[index] === '-') {
+            this.gameState[index] = currentPlayer;
+            this.renderBoard();
+            if (this.checkWin()) {
+              this.gameActive = false;
+              alert(currentPlayer + ' wins!');
+            } else if (this.checkDraw()) {
+              this.gameActive = false;
+              alert('It\'s a draw!');
             }
-          
-    }
-  }
-}
+          }
+        }
 
-    const ticTacToe = new TicTacToe();
-  </script>
-   <style>
-    body {
-      margin: 0;
-      padding: 0;
-      font-size: 1.5rem;
-    }
-    nav ul {
-      list-style-type: none;
-      margin: 0;
-      padding: 0;
-      background-color: black;
-      overflow: hidden;
-    }
-    
-    nav ul li {
-      float: left;
-    }
-    
-    nav ul li a {
-      display: block;
-      color: white;
-      text-align: center;
-      padding: 14px 16px;
-      text-decoration: none;
-    }
-    
-    nav ul li a:hover {
-      background-color: #ddd;
-    }
-    
-    .hero {
-      max-height: 30%;
-      display: flex;
-      justify-content: center;
-      gap: 2rem;
-      padding: 2rem;
-      margin-bottom: 2rem;
-      background-color: #f1f1f1;
-    }
-    .hero-text {
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-    }
-    .hero-image img{
+        checkWin() {
+          const winningCombinations = [
+            [0, 1, 2], [3, 4, 5], [6, 7, 8], // Horizontal rows
+            [0, 3, 6], [1, 4, 7], [2, 5, 8], // Vertical columns
+            [0, 4, 8], [2, 4, 6] // Diagonals
+          ];
+
+
+          return winningCombinations.some(combination => {
+            const [a, b, c] = combination;
+            return this.gameState[a] !== '-' && this.gameState[a] === this.gameState[b] && this.gameState[a] === this.gameState[c];
+          });
+        }
+
+        checkDraw() {
+          return this.gameState.every(symbol => symbol !== '-');
+        }
+
+        renderBoard() {
+          this.cells.forEach((cell, index) => {
+            cell.textContent = this.gameState[index];
+          });
+        }
+
+        startGame() {
+          this.gameState = Array(9).fill('-');
+          this.gameActive = true;
+          this.currentPlayer = 'X';
+          this.renderBoard();
+
+
+
+        }
+
+        trainAgent() {
+          console.log("At train Agent")
+          const newAgent = new TicTacToeAgent(3);
+          const episodes = parseInt(10000);
+          const rate = parseFloat(this.learningRate);
+
+          // Train the new agent with the specified number of episodes and learning rate
+          newAgent.train(episodes);
+
+          // Update the message or perform any other necessary actions
+          this.message.textContent = `Training AI with ${episodes} episodes and learning rate ${rate}...`;
+        }
+
+        playAgainstAgent() {
+          const savedAgentData = localStorage.getItem('bestAgentData');
+          if (!savedAgentData) {
+            alert('No saved agent data found. Train the AI first.');
+            return;
+          }
+
+          const loadedAgentData = JSON.parse(savedAgentData);
+          const loadedAgent = new TicTacToeAgent(
+            loadedAgentData.boardSize,
+            loadedAgentData.learningRate,
+            loadedAgentData.gamma,
+            loadedAgentData.epsilonDecay
+          );
+
+          this.startGame()
+          let gameActive = true;
+          let xCount = 0;
+          let oCount = 0;
+
+          // Agent makes the first move
+          const actionO = loadedAgent.makeMove(this.gameState);
+          this.cellClicked(actionO, 'O')
+          this.cells.forEach(cell => {
+            cell.addEventListener('click', () => {
+              const cellIndex = parseInt(cell.dataset.index);
+
+              this.cellClicked(cellIndex, 'X');
+              const actionO = loadedAgent.makeMove(this.gameState);
+              this.cellClicked(actionO, 'O')
+
+              if (this.checkWin(this.gameState, 'O')) {
+                console.log('O won');
+
+              } else if (this.checkDraw(this.gameState)) {
+                console.log("It's a draw!");
+
+              }
+            });
+          });
+        }
+      }
+
+      const ticTacToe = new TicTacToe();
+    </script>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        font-size: 1.5rem;
+      }
+
+      nav ul {
+        list-style-type: none;
+        margin: 0;
+        padding: 0;
+        background-color: black;
+        overflow: hidden;
+      }
+
+      nav ul li {
+        float: left;
+      }
+
+      nav ul li a {
+        display: block;
+        color: white;
+        text-align: center;
+        padding: 14px 16px;
+        text-decoration: none;
+      }
+
+      nav ul li a:hover {
+        background-color: #ddd;
+      }
+
+      .hero {
+        max-height: 30%;
+        display: flex;
+        justify-content: center;
+        gap: 2rem;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        background-color: #f1f1f1;
+      }
+
+      .hero-text {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+      }
+
+      .hero-image img {
         width: 20rem;
         height: auto;
-        border-radius: 1rem; 
+        border-radius: 1rem;
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    }
-    .hero-buttons {
-      display: flex;
-      justify-content: center;
-      margin-top: 20px;
-    }
+      }
 
-    button {
-      margin: 0 10px;
-      padding: 10px 20px;
-      border: none;
-      border-radius: 5px;
-      background-color: #007bff;
-      color: #fff;
-      cursor: pointer;
-      font-size: 1.5rem;
-    }
+      .hero-buttons {
+        display: flex;
+        justify-content: center;
+        margin-top: 20px;
+      }
 
-    button:hover {
-      background-color: #0056b3;
-    }
+      button {
+        margin: 0 10px;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 5px;
+        background-color: #007bff;
+        color: #fff;
+        cursor: pointer;
+        font-size: 1.5rem;
+      }
 
-  .game {
-    display: flex;
-    justify-content: center;
-    gap: 5rem;
-  }
-  .game-controls {
-    display: flex;
-    flex-direction: column;
-    justify-content: space-around;
-  }
-  .control-item {
-    display: flex;
-    flex-direction: column;
-  }
-  .control-input {
-    width: fit-content;
-    font-size: 1.5rem;
-  }
-    
-  .cell {
-    display: inline-block;
-    width: 8rem;
-    height: 8rem;
-    margin: 0.5rem; 
-    border: 1px solid #333; 
-    border-radius: 0.5rem;
-    box-sizing: border-box; 
-    background-color: #fff;
-    text-align: center;
-    line-height: 5rem;
-    font-size: 3rem;
-    font-weight: bold;
-    color: #333;
-    cursor: pointer;
-    transition: background-color 0.3s ease, box-shadow 0.3s ease;
-    box-shadow: 0 0 5px rgba(0, 0, 0, 0.25);
-  }
-  .cell:hover {
-    background-color: #f0f0f0;
-  }
+      button:hover {
+        background-color: #0056b3;
+      }
 
-  .cell.x::after {
-    content: "X";
-  }
+      .game {
+        display: flex;
+        justify-content: center;
+        gap: 5rem;
+      }
 
-  .cell.o::after {
-    content: "O";
-  }
+      .game-controls {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-around;
+      }
 
-  .board-row::after {
-    content: "";
-    display: block;
-    clear: both;
-  }
-  .tooltip {
-      position: relative;
-      display: inline-block;
-      cursor: pointer;
-    }
-    
-  .tooltip .tooltiptext {
-    visibility: hidden;
-    width: 160px;
-    background-color: #555;
-    color: #fff;
-    text-align: center;
-    border-radius: 6px;
-    padding: 5px 0;
-    position: absolute;
-    z-index: 1;
-    bottom: 125%;
-    left: 50%;
-    margin-left: -80px;
-    opacity: 0;
-    transition: opacity 0.3s;
-  }
-    
-  .tooltip .tooltiptext::after {
-    content: "";
-    position: absolute;
-    top: 100%;
-    left: 50%;
-    margin-left: -5px;
-    border-width: 5px;
-    border-style: solid;
-    border-color: #555 transparent transparent transparent;
-  }
+      .control-item {
+        display: flex;
+        flex-direction: column;
+      }
 
-  .tooltip:hover .tooltiptext {
-    visibility: visible;
-    opacity: 1;
-  }
-  </style>
+      .control-input {
+        width: fit-content;
+        font-size: 1.5rem;
+      }
+
+      .cell {
+        display: inline-block;
+        width: 8rem;
+        height: 8rem;
+        margin: 0.5rem;
+        border: 1px solid #333;
+        border-radius: 0.5rem;
+        box-sizing: border-box;
+        background-color: #fff;
+        text-align: center;
+        line-height: 5rem;
+        font-size: 3rem;
+        font-weight: bold;
+        color: #333;
+        cursor: pointer;
+        transition: background-color 0.3s ease, box-shadow 0.3s ease;
+        box-shadow: 0 0 5px rgba(0, 0, 0, 0.25);
+      }
+
+      .cell:hover {
+        background-color: #f0f0f0;
+      }
+
+      .cell.x::after {
+        content: "X";
+      }
+
+      .cell.o::after {
+        content: "O";
+      }
+
+      .board-row::after {
+        content: "";
+        display: block;
+        clear: both;
+      }
+
+      .tooltip {
+        position: relative;
+        display: inline-block;
+        cursor: pointer;
+      }
+
+      .tooltip .tooltiptext {
+        visibility: hidden;
+        width: 160px;
+        background-color: #555;
+        color: #fff;
+        text-align: center;
+        border-radius: 6px;
+        padding: 5px 0;
+        position: absolute;
+        z-index: 1;
+        bottom: 125%;
+        left: 50%;
+        margin-left: -80px;
+        opacity: 0;
+        transition: opacity 0.3s;
+      }
+
+      .tooltip .tooltiptext::after {
+        content: "";
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        margin-left: -5px;
+        border-width: 5px;
+        border-style: solid;
+        border-color: #555 transparent transparent transparent;
+      }
+
+      .tooltip:hover .tooltiptext {
+        visibility: visible;
+        opacity: 1;
+      }
+    </style>
 </body>
-</html>
 
+</html>

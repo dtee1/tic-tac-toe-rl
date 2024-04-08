@@ -1,6 +1,6 @@
 class TicTacToeAgent {
   constructor(
-    boardSize = 4,
+    boardSize = 3,
     learningRate = 0.001,
     gamma = 0.9,
     epsilonDecay = 0.995,
@@ -113,28 +113,84 @@ class TicTacToeAgent {
     this.saveBestAgent();
   }
 
+  // makeMove(gameState) {
+  //   if (Math.random() < this.epsilon) {
+  //     const availableMoves = gameState
+  //       .map((cell, index) => (cell === '-' ? index : -1))
+  //       .filter((index) => index !== -1);
+  //     return availableMoves[Math.floor(Math.random() * availableMoves.length)];
+  //   } else {
+  //     // Use Q-table to make a move
+  //     const stateIndex = this.getStateIndex(gameState);
+  //     const qValues = this.qTable[stateIndex];
+  //     const availableMoves = gameState
+  //       .map((cell, index) => (cell === '-' ? index : -1))
+  //       .filter((index) => index !== -1);
+  //     const legalMovesQValues = availableMoves.map((move) => qValues[move]);
+  //     const bestMoveIndex =
+  //       availableMoves[
+  //         legalMovesQValues.indexOf(Math.max(...legalMovesQValues))
+  //       ];
+  //     // console.log(bestMoveIndex);
+  //     return bestMoveIndex;
+  //   }
+  // }
   makeMove(gameState) {
-    if (Math.random() < this.epsilon) {
-      const availableMoves = gameState
-        .map((cell, index) => (cell === '-' ? index : -1))
-        .filter((index) => index !== -1);
-      return availableMoves[Math.floor(Math.random() * availableMoves.length)];
+    // Function to check if a move blocks the opponent from winning
+    const blockOpponentWinningMove = (gameState, index) => {
+      const opponent = this.currentPlayer === 'X' ? 'O' : 'X';
+      const nextState = [...gameState];
+      nextState[index] = opponent;
+      return this.checkWin(nextState, opponent);
+    };
+
+    // Function to check if a move leads to winning
+    const winningMove = (gameState, index) => {
+      const nextState = [...gameState];
+      nextState[index] = this.currentPlayer;
+      return this.checkWin(nextState, this.currentPlayer);
+    };
+
+    // Prioritize winning moves
+    const winningMoves = gameState
+      .map((cell, index) => (cell === '-' && winningMove(gameState, index) ? index : -1))
+      .filter(index => index !== -1);
+
+    if (winningMoves.length > 0) {
+      // Make a winning move if available
+      return winningMoves[0];
+    }
+
+    // If no winning move, prioritize blocking the opponent from winning
+    const opponentWinningMoves = gameState
+      .map((cell, index) => (cell === '-' && blockOpponentWinningMove(gameState, index) ? index : -1))
+      .filter(index => index !== -1);
+
+    if (opponentWinningMoves.length > 0) {
+      // Block the opponent from winning
+      return opponentWinningMoves[0];
     } else {
-      // Use Q-table to make a move
-      const stateIndex = this.getStateIndex(gameState);
-      const qValues = this.qTable[stateIndex];
-      const availableMoves = gameState
-        .map((cell, index) => (cell === '-' ? index : -1))
-        .filter((index) => index !== -1);
-      const legalMovesQValues = availableMoves.map((move) => qValues[move]);
-      const bestMoveIndex =
-        availableMoves[
-          legalMovesQValues.indexOf(Math.max(...legalMovesQValues))
-        ];
-      // console.log(bestMoveIndex);
-      return bestMoveIndex;
+      // If no immediate threat or winning move, proceed with the default strategy
+      if (Math.random() < this.epsilon) {
+        // Random move with epsilon-greedy policy
+        const availableMoves = gameState
+          .map((cell, index) => (cell === '-' ? index : -1))
+          .filter(index => index !== -1);
+        return availableMoves[Math.floor(Math.random() * availableMoves.length)];
+      } else {
+        // Use Q-table to make a move
+        const stateIndex = this.getStateIndex(gameState);
+        const qValues = this.qTable[stateIndex];
+        const availableMoves = gameState
+          .map((cell, index) => (cell === '-' ? index : -1))
+          .filter(index => index !== -1);
+        const legalMovesQValues = availableMoves.map(move => qValues[move]);
+        const bestMoveIndex = availableMoves[legalMovesQValues.indexOf(Math.max(...legalMovesQValues))];
+        return bestMoveIndex;
+      }
     }
   }
+
 
   assignReward(outcome) {
     if (outcome === 'X wins!') {
@@ -148,27 +204,11 @@ class TicTacToeAgent {
 
   checkWin(gameState, player) {
     const winningCombinations = [
-      [0, 1, 2],
-      [1, 2, 3], // Top row
-      [4, 5, 6],
-      [5, 6, 7], // Middle row
-      [8, 9, 10],
-      [9, 10, 11], // Bottom row
-      [12, 13, 14],
-      [13, 14, 15], // Last row
-      [0, 4, 8],
-      [4, 8, 12], // Left column
-      [1, 5, 9],
-      [5, 9, 13], // 2nd column
-      [2, 6, 10],
-      [6, 10, 14], // 3rd column
-      [3, 7, 11],
-      [7, 11, 15], // Right column
-      [0, 5, 10],
-      [5, 10, 15], // Diagonal from top-left to bottom-right
-      [3, 6, 9],
-      [6, 9, 12], // Diagonal from top-right to bottom-left
+      [0, 1, 2], [3, 4, 5], [6, 7, 8], // Horizontal rows
+      [0, 3, 6], [1, 4, 7], [2, 5, 8], // Vertical columns
+      [0, 4, 8], [2, 4, 6] // Diagonals
     ];
+
 
     return winningCombinations.some((combination) => {
       const [a, b, c] = combination;
