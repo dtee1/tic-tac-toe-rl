@@ -43,152 +43,116 @@
         <span class="tooltiptext">Adjusts the speed of learning for the AI</span>
       </div>
       <div>
-        <button onclick="ticTacToe.trainAgent()">Train AI</button>
-        <button onclick="ticTacToe.playAgainstAgent()">Play Against Agent</button>
+        <button onclick="trainAgent()">Train AI</button>
+        <button onclick="playAgainstAgent()">Play Against Agent</button>
       </div>
 
     </div>
-    <div class="board">
-      <div class="board-row">
-        <div class="cell" data-index="0"></div>
-        <div class="cell" data-index="1"></div>
-        <div class="cell" data-index="2"></div>
-      </div>
-      <div class="board-row">
-        <div class="cell" data-index="3"></div>
-        <div class="cell" data-index="4"></div>
-        <div class="cell" data-index="5"></div>
-      </div>
-      <div class="board-row">
-        <div class="cell" data-index="6"></div>
-        <div class="cell" data-index="7"></div>
-        <div class="cell" data-index="8"></div>
-      </div>
-      <p id="message"></p>
+    <div class="board" id="board">
+      <div class="cell" data-row="0" data-col="0"></div>
+      <div class="cell" data-row="0" data-col="1"></div>
+      <div class="cell" data-row="0" data-col="2"></div>
+      <div class="cell" data-row="1" data-col="0"></div>
+      <div class="cell" data-row="1" data-col="1"></div>
+      <div class="cell" data-row="1" data-col="2"></div>
+      <div class="cell" data-row="2" data-col="0"></div>
+      <div class="cell" data-row="2" data-col="1"></div>
+      <div class="cell" data-row="2" data-col="2"></div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
     <script src="agent.js"></script>
     <script>
-      class TicTacToe {
-        constructor() {
-          this.boardSize = 3;
-          this.board = Array(this.boardSize * this.boardSize).fill('-');
-          this.gameActive = true;
-          this.cells = document.querySelectorAll('.cell');
-          this.gameState = Array(9).fill('-');
-          this.currentPlayer = 'X';
-          this.trainingEpisodes = document.getElementById('training-episodes');
-          this.learningRate = document.getElementById('learning-rate');
-          this.message = document.getElementById('message');
-        }
+      const board = document.getElementById('board');
+      const cells = document.querySelectorAll('.cell');
+      let boardG = [
+      ['-', '-', '-'],
+      ['-', '-', '-'],
+      ['-', '-', '-'],
+    ];
 
-        cellClicked(index, currentPlayer) {
-
-          if (this.gameActive && this.gameState[index] === '-') {
-            this.gameState[index] = currentPlayer;
-            this.renderBoard();
-            if (this.checkWin()) {
-              this.gameActive = false;
-              alert(currentPlayer + ' wins!');
-            } else if (this.checkDraw()) {
-              this.gameActive = false;
-              alert('It\'s a draw!');
-            }
-          }
-        }
-
-        checkWin() {
-          const winningCombinations = [
-            [0, 1, 2], [3, 4, 5], [6, 7, 8], // Horizontal rows
-            [0, 3, 6], [1, 4, 7], [2, 5, 8], // Vertical columns
-            [0, 4, 8], [2, 4, 6] // Diagonals
-          ];
-
-
-          return winningCombinations.some(combination => {
-            const [a, b, c] = combination;
-            return this.gameState[a] !== '-' && this.gameState[a] === this.gameState[b] && this.gameState[a] === this.gameState[c];
-          });
-        }
-
-        checkDraw() {
-          return this.gameState.every(symbol => symbol !== '-');
-        }
-
-        renderBoard() {
-          this.cells.forEach((cell, index) => {
-            cell.textContent = this.gameState[index];
-          });
-        }
-
-        startGame() {
-          this.gameState = Array(9).fill('-');
-          this.gameActive = true;
-          this.currentPlayer = 'X';
-          this.renderBoard();
-
-
-
-        }
-
-        trainAgent() {
-          console.log("At train Agent")
-          const newAgent = new TicTacToeAgent(3);
-          const episodes = parseInt(10000);
-          const rate = parseFloat(this.learningRate);
-
-          // Train the new agent with the specified number of episodes and learning rate
-          newAgent.train(episodes);
-
-          // Update the message or perform any other necessary actions
-          this.message.textContent = `Training AI with ${episodes} episodes and learning rate ${rate}...`;
-        }
-
-        playAgainstAgent() {
-          const savedAgentData = localStorage.getItem('bestAgentData');
-          if (!savedAgentData) {
-            alert('No saved agent data found. Train the AI first.');
-            return;
-          }
-
-          const loadedAgentData = JSON.parse(savedAgentData);
-          const loadedAgent = new TicTacToeAgent(
-            loadedAgentData.boardSize,
-            loadedAgentData.learningRate,
-            loadedAgentData.gamma,
-            loadedAgentData.epsilonDecay
-          );
-
-          this.startGame()
-          let gameActive = true;
-          let xCount = 0;
-          let oCount = 0;
-
-          // Agent makes the first move
-          const actionO = loadedAgent.makeMove(this.gameState);
-          this.cellClicked(actionO, 'O')
-          this.cells.forEach(cell => {
-            cell.addEventListener('click', () => {
-              const cellIndex = parseInt(cell.dataset.index);
-
-              this.cellClicked(cellIndex, 'X');
-              const actionO = loadedAgent.makeMove(this.gameState);
-              this.cellClicked(actionO, 'O')
-
-              if (this.checkWin(this.gameState, 'O')) {
-                console.log('O won');
-
-              } else if (this.checkDraw(this.gameState)) {
-                console.log("It's a draw!");
-
-              }
-            });
-          });
+      // Initialize the board
+      function initializeBoard() {
+        cells.forEach(cell => {
+          cell.textContent = '-';
+          cell.addEventListener('click', handleClick);
+        });
+      }
+      function resetBoard() {
+        boardG = [
+          ['-', '-', '-'],
+          ['-', '-', '-'],
+          ['-', '-', '-'],
+        ];
+        cells.forEach(cell => {
+          cell.textContent = '-';
+          cell.addEventListener('click', handleClick);
+        });
+        winner=null;
+      }
+      function trainAgent(){
+        const episodesInput = document.getElementById('training-episodes');
+        const learningRateInput = document.getElementById('learning-rate');
+        
+        const episodes = parseInt(episodesInput.value);
+        const learningRate = parseFloat(learningRateInput.value);
+        
+        result = newAgent.startTrain(episodes, learningRate);
+        if(result){
+          alert("Training Completed!")
         }
       }
+      function playAgainstAgent(){
+        newAgent.loadQState()
+      }
 
-      const ticTacToe = new TicTacToe();
+      // Handle click on a cell
+      function handleClick(event) {
+        const row = parseInt(event.target.dataset.row);
+        const col = parseInt(event.target.dataset.col);
+        newAgent.board = boardG;
+        if (boardG[row][col] === '-') {
+          boardG[row][col] = 'X';
+          event.target.textContent = 'X';
+          event.target.removeEventListener('click', handleClick);
+          [isGameOver, winner]=newAgent.isGameOver(boardG);
+          console.log(winner)
+          if (winner) {
+            if (winner === 'X') {
+              alert('You win!');
+            } else if (winner === 'O') {
+              alert('Agent wins!');
+            } else {
+              alert("It's a draw!");
+            }
+            resetBoard();
+            return;
+          }
+        }
+        
+        const action= newAgent.agentTurn(boardG);
+        
+        const [agentRow, agentCol] = action;
+        boardG[agentRow][agentCol] = 'O';
+        cells[agentRow * 3 + agentCol].textContent = 'O';
+        cells[agentRow * 3 + agentCol].removeEventListener('click', handleClick);
+        [isGameOver, winner]=newAgent.isGameOver(boardG)
+        if (winner) {
+          if (winner === 'X') {
+            alert('You win!');
+          } else if (winner === 'O') {
+            alert('Agent wins!');
+          } else {
+            alert("It's a draw!");
+          }
+          resetBoard();
+          return;
+        }
+       
+        
+      }
+      initializeBoard();
+      const newAgent = new TicTacToeAgent();
     </script>
     <style>
       body {
@@ -287,24 +251,25 @@
         font-size: 1.5rem;
       }
 
-      .cell {
-        display: inline-block;
-        width: 8rem;
-        height: 8rem;
-        margin: 0.5rem;
-        border: 1px solid #333;
-        border-radius: 0.5rem;
-        box-sizing: border-box;
-        background-color: #fff;
-        text-align: center;
-        line-height: 5rem;
-        font-size: 3rem;
-        font-weight: bold;
-        color: #333;
-        cursor: pointer;
-        transition: background-color 0.3s ease, box-shadow 0.3s ease;
-        box-shadow: 0 0 5px rgba(0, 0, 0, 0.25);
-      }
+      .board {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(3, 1fr);
+      gap: 2px;
+      margin: 20px auto;
+      width: 300px;
+      height: 300px;
+      border: 2px solid black;
+    }
+
+    .cell {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      cursor: pointer;
+      background-color: #eee;
+    }
 
       .cell:hover {
         background-color: #f0f0f0;
